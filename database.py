@@ -504,11 +504,18 @@ def get_fort_ids_within_range(session, forts, range, lat, lon):
 
     return ids
     
-def check_postgis_version(session):
-    results = session.execute('SELECT extversion FROM pg_catalog.pg_extension WHERE extname=\'postgis\'')
-    session.commit()
-    result = results.fetchone()
-    return result[0] if result is not None else None
+def is_spatial_capable(session):
+    is_capable = False
+    
+    if config.DB_ENGINE.startswith('mysql'):
+        is_capable = True
+    elif config.DB_ENGINE.startswith('postgres'):
+        results = session.execute('SELECT extversion FROM pg_catalog.pg_extension WHERE extname=\'postgis\'')
+        session.commit()
+        result = results.fetchone()
+        is_capable = True if result is not None else False
+        
+    return is_capable
 
 def float_to_str(f):
     """

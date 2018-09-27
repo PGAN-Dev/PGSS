@@ -39,10 +39,10 @@ class RaidScan:
             LOG.info('Scan-Area is set! Getting Forts...')
             session = database.Session()
             
-            postgis_version = database.check_postgis_version(session)
+            is_spatial_capable = database.is_spatial_capable(session)
             all_forts = []
             
-            if self.config.SCAN_AREA != 'All' and postgis_version is not None:
+            if self.config.SCAN_AREA != 'All' and is_spatial_capable:
                 all_forts = database.get_forts_inside_scan_area(session)
             else:
                 all_forts = database.get_forts(session)            
