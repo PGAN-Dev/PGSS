@@ -42,7 +42,7 @@ class RaidScan:
             postgis_version = database.check_postgis_version(session)
             all_forts = []
             
-            if self.config.SCAN_AREA != 'All' && postgis_version is not None:
+            if self.config.SCAN_AREA != 'All' and postgis_version is not None:
                 all_forts = database.get_forts_inside_scan_area(session)
             else:
                 all_forts = database.get_forts(session)            
