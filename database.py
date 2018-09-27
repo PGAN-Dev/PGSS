@@ -4,6 +4,7 @@ import time
 import math
 import datetime
 import time
+import decimal
 from sqlalchemy import create_engine, Column, Boolean, Integer, String, Float, SmallInteger, \
         BigInteger, ForeignKey, Index, UniqueConstraint, \
         create_engine, cast, func, desc, asc, desc, and_, exists
@@ -13,14 +14,19 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.exc import NoResultFound
 from logging import basicConfig, getLogger, FileHandler, StreamHandler, DEBUG, INFO, ERROR, Formatter
 from geopy.distance import vincenty
+from shapely.geometry import mapping
 from sys import argv
 import importlib
+
 LOG = getLogger('')
 
 if len(argv) >= 2:
     config = importlib.import_module(str(argv[1]))
 else:
     config = importlib.import_module('config')
+    
+ctx = decimal.Context()
+ctx.prec = 20
 
 class DBCacheFortIdsWithinRange:
 
@@ -452,6 +458,27 @@ def get_device_location_history(session, near, uuid):
     device_location = session.query(DeviceLocationHistory).filter(DeviceLocationHistory.device_uuid == uuid).filter(DeviceLocationHistory.timestamp <= near).order_by(DeviceLocationHistory.timestamp.desc()).first()
     session.commit()
     return device_location
+    
+def get_forts_inside_scan_area(session):
+    forts = []
+    poly_coords = ''
+
+    # Convert scan area to spatial coords string
+    mapped_polygon = mapping(config.SCAN_AREA)
+    for poly_coord in mapped_polygon['coordinates'][0]:
+        poly_coords = poly_coords + float_to_str(poly_coord[1]) + ' ' + float_to_str(poly_coord[0]) + ','
+        
+    if poly_coords != '':
+        # Strip trailing comma
+        poly_coords = poly_coords[:-1]
+        
+    results = session.execute('SELECT id, lat, lon FROM forts WHERE ST_CONTAINS(ST_GEOMFROMTEXT(\'POLYGON((' + poly_coords + '))\'), ST_POINT(lon, lat))')
+    session.commit()
+    
+    for row in results:
+        forts.append(Fort(id=row[0],lat=row[1],lon=row[2]))
+    
+    return forts
 
 def get_fort_ids_within_range(session, forts, range, lat, lon):
 
@@ -476,3 +503,17 @@ def get_fort_ids_within_range(session, forts, range, lat, lon):
     DBCache.fort_ids_within_range.append(cache_object)
 
     return ids
+    
+def check_postgis_version(session):
+    results = session.execute('SELECT extversion FROM pg_catalog.pg_extension WHERE extname=\'postgis\'')
+    session.commit()
+    result = results.fetchone()
+    return result[0] if result is not None else None
+
+def float_to_str(f):
+    """
+    Convert the given float to a string,
+    without resorting to scientific notation
+    """
+    d1 = ctx.create_decimal(repr(f))
+    return format(d1, 'f')

@@ -38,13 +38,24 @@ class RaidScan:
 
             LOG.info('Scan-Area is set! Getting Forts...')
             session = database.Session()
-            all_forts = database.get_forts(session)
+            
+            postgis_version = database.check_postgis_version(session)
+            all_forts = []
+            
+            if self.config.SCAN_AREA != 'All' && postgis_version is not None:
+                all_forts = database.get_forts_inside_scan_area(session)
+            else:
+                all_forts = database.get_forts(session)            
 
             all_forts_to_download = []
 
             session2 = database.Session()
 
+            i = 0;
+
             for fort in all_forts:
+                i = i + 1
+                LOG.info('Processing gym {} of {}'.format(i, len(all_forts)))
                 if fort.lat is not None and fort.lon is not None and self.config.SCAN_AREA == 'All':
                     all_forts_to_download.append(fort.id)
                     self.all_forts_inside.append(DBFort(fort.id, fort.lat, fort.lon, 0))

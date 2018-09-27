@@ -47,10 +47,10 @@ def main():
     if (config.MAP_START[0] == 0 and config.MAP_START[1] == 0) or (config.MAP_END[0] == 0 and config.MAP_END[1] == 0):
         check_boundary = False
     else:
-        north = max(MAP_START[0], MAP_END[0])
-        south = min(MAP_START[0], MAP_END[0])
-        east = max(MAP_START[1], MAP_END[1])
-        west = min(MAP_START[1], MAP_END[1])
+        north = max(config.MAP_START[0], config.MAP_END[0])
+        south = min(config.MAP_START[0], config.MAP_END[0])
+        east = max(config.MAP_START[1], config.MAP_END[1])
+        west = min(config.MAP_START[1], config.MAP_END[1])
 
     all_forts = [fort for fort in database.get_forts(session)]
     print('{} forts find in database. Start downloading.'.format(len(all_forts)))
