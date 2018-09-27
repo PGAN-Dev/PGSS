@@ -472,7 +472,7 @@ def get_forts_inside_scan_area(session):
         # Strip trailing comma
         poly_coords = poly_coords[:-1]
         
-    results = session.execute('SELECT id, lat, lon FROM forts WHERE ST_CONTAINS(ST_GEOMFROMTEXT(\'POLYGON((' + poly_coords + '))\'), ST_POINT(lon, lat))')
+    results = session.execute('SELECT id, lat, lon FROM forts WHERE lat IS NOT NULL AND ST_CONTAINS(ST_GEOMFROMTEXT(\'POLYGON((' + poly_coords + '))\'), ST_POINTFROMTEXT(CONCAT(\'POINT(\', lon, \' \', lat, \')\')))')
     session.commit()
     
     for row in results:
